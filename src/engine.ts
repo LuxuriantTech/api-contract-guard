@@ -9,7 +9,11 @@ import { resolveNode, type ResolvedNode } from "./resolver.js";
 
 type JsonRecord = { [key: string]: JsonValue };
 type SchemaSide = "req" | "res";
-interface ParameterEntry { parameter: JsonRecord; index: number }
+interface ParameterEntry {
+  parameter: JsonRecord;
+  pointer: string;
+  document: LoadedDocument;
+}
 
 function jsonRecord(value: JsonValue | undefined): JsonRecord | undefined {
   return value !== undefined && isRecord(value) ? value : undefined;
@@ -136,54 +140,29 @@ function validateParameters(value: JsonValue | undefined): JsonValue[] {
   return value;
 }
 
-function collectParameters(pathItem: JsonRecord, operation: JsonRecord): Map<string, ParameterEntry> {
+function collectEffectiveParameters(
+  pathItem: JsonRecord,
+  operation: JsonRecord,
+  document: LoadedDocument,
+  context: RunContext,
+  pathItemBase: string,
+  operationBase: string,
+  emitWarnings: boolean,
+): Map<string, ParameterEntry> {
   const found = new Map<string, ParameterEntry>();
-  const add = (value: JsonValue, index: number): void => {
+  const add = (value: JsonValue, pointer: string): void => {
     const parameter = jsonRecord(value);
     const key = parameter && parameterIdentity(parameter);
-    if (parameter && key) found.set(key, { parameter, index });
-  };
-  for (const value of validateParameters(pathItem.parameters)) add(value, -1);
-  for (const [index, value] of validateParameters(operation.parameters).entries()) add(value, index);
-  return found;
-}
-
-async function parameterDiff(baseline: JsonRecord, candidate: JsonRecord, context: RunContext, findings: Finding[], baselineDocument: LoadedDocument, candidateDocument: LoadedDocument): Promise<void> {
-  const oldPaths = jsonRecord(baseline.paths) ?? Object.create(null) as JsonRecord;
-  const newPaths = jsonRecord(candidate.paths) ?? Object.create(null) as JsonRecord;
-  for (const path of Object.keys(oldPaths)) {
-    const oldPath = jsonRecord(oldPaths[path]);
-    const newPath = jsonRecord(newPaths[path]);
-    if (!oldPath || !newPath) continue;
-    for (const method of methods) {
-      const oldOperation = jsonRecord(oldPath[method]);
-      const newOperation = jsonRecord(newPath[method]);
-      if (!oldOperation || !newOperation) continue;
-      const base = `/paths/${ptr(path)}/${method}`;
-      const oldParameters = collectParameters(oldPath, oldOperation);
-      for (const [key, entry] of collectParameters(newPath, newOperation)) {
-        const previous = oldParameters.get(key)?.parameter;
-        if (["query", "header", "cookie"].includes(entry.parameter.in as string) && entry.parameter.required === true && previous?.required !== true && !findings.some((finding) => finding.ruleId === "REQUIRED_PARAMETER_ADDED" && finding.method === method && finding.path === path && finding.pointer === `${base}/parameters/${entry.index}`)) addFinding(findings, "REQUIRED_PARAMETER_ADDED", method, path, `${base}/parameters/${entry.index}`, `required ${entry.parameter.in} parameter added: ${entry.parameter.name}`);
-        if (Array.isArray(jsonRecord(previous?.schema)?.enum) && !Array.isArray(jsonRecord(entry.parameter.schema)?.enum)) addWarning(context, "ENUM_DOMAIN_UNBOUNDED", `${base}/parameters/${entry.index}/schema`, "request enum domain removed");
-        await diffSchema(previous?.schema, entry.parameter.schema, context, baselineDocument, candidateDocument, `${base}/parameters/${entry.index}/schema`, method, path, "req", findings);
-      }
-    }
-  }
-}
-
-function parameterMap(values: JsonValue[], context: RunContext, base: string): Map<string, ParameterEntry> {
-  const found = new Map<string, ParameterEntry>();
-  for (const [index, value] of values.entries()) {
-    const parameter = jsonRecord(value);
-    const key = parameter && parameterIdentity(parameter);
-    if (!parameter || !key) continue;
+    if (!parameter || !key) return;
     if (parameter.in === "path") {
-      addWarning(context, "IGNORED_PARAMETER_LOCATION", `${base}/parameters/${index}`, "ignored path parameter");
-      continue;
+      if (emitWarnings) addWarning(context, "IGNORED_PARAMETER_LOCATION", pointer, "ignored path parameter");
+      return;
     }
-    if (!["query", "header", "cookie"].includes(parameter.in as string)) throw new Fail("CAPABILITY_UNSUPPORTED");
-    found.set(key, { parameter, index });
-  }
+    if (!['query', 'header', 'cookie'].includes(parameter.in as string)) throw new Fail("CAPABILITY_UNSUPPORTED");
+    found.set(key, { parameter, pointer, document });
+  };
+  for (const [index, value] of validateParameters(pathItem.parameters).entries()) add(value, `${pathItemBase}/parameters/${index}`);
+  for (const [index, value] of validateParameters(operation.parameters).entries()) add(value, `${operationBase}/parameters/${index}`);
   return found;
 }
 
@@ -317,13 +296,14 @@ export async function compareWithFileSystem(options: CompareOptions, fs: FileSys
         await validateOperationSurface(oldOperation, oldPathItem, context, oldPath.document, base);
         if (newOperation) await validateOperationSurface(newOperation, newPathItem!, context, newPath?.document ?? candidateDocument, base);
         if (!newOperation) { addFinding(findings, "OPERATION_REMOVED", method, path, base, "operation removed"); continue; }
-        const oldParameters = [...validateParameters(oldPathItem.parameters), ...validateParameters(oldOperation.parameters)];
-        const newParameters = [...validateParameters(newPathItem?.parameters), ...validateParameters(newOperation.parameters)];
-        const newParameterMap = parameterMap(newParameters, context, base);
-        const oldKeys = new Set<string>();
-        for (const value of oldParameters) { const parameter = jsonRecord(value); const key = parameter && parameterIdentity(parameter); if (key) oldKeys.add(key); }
-        for (const [key, entry] of newParameterMap) if (entry.parameter.required === true && !oldKeys.has(key)) addFinding(findings, "REQUIRED_PARAMETER_ADDED", method, path, `${base}/parameters/${entry.index}`, `required ${entry.parameter.in} parameter added: ${entry.parameter.name}`);
-        for (const entry of newParameterMap.values()) if (entry.parameter.schema !== undefined) await diffSchema(entry.parameter.schema, entry.parameter.schema, context, newPath?.document ?? candidateDocument, newPath?.document ?? candidateDocument, `${base}/parameters/${entry.index}/schema`, method, path, "req", findings);
+        const pathItemBase = `/paths/${ptr(path)}`;
+        const oldParameterMap = collectEffectiveParameters(oldPathItem, oldOperation, oldPath.document, context, pathItemBase, base, false);
+        const newParameterMap = collectEffectiveParameters(newPathItem!, newOperation, newPath?.document ?? candidateDocument, context, pathItemBase, base, true);
+        for (const [key, entry] of newParameterMap) {
+          const previous = oldParameterMap.get(key);
+          if (entry.parameter.required === true && previous?.parameter.required !== true) addFinding(findings, "REQUIRED_PARAMETER_ADDED", method, path, entry.pointer, `required ${entry.parameter.in} parameter added: ${entry.parameter.name}`);
+          await diffSchema(previous?.parameter.schema, entry.parameter.schema, context, previous?.document ?? oldPath.document, entry.document, `${entry.pointer}/schema`, method, path, "req", findings);
+        }
         const oldRequestBody = oldOperation.requestBody, newRequestBody = newOperation.requestBody;
         if (oldRequestBody === undefined && newRequestBody !== undefined) addWarning(context, "NEW_REQUEST_BODY", `${base}/requestBody`, "new request body");
         if (isRecord(oldRequestBody) && isRecord(newRequestBody)) {
@@ -344,7 +324,6 @@ export async function compareWithFileSystem(options: CompareOptions, fs: FileSys
         }
       }
     }
-    await parameterDiff(baseline, candidate, context, findings, baselineDocument, candidateDocument);
     await annotateConsumers(options.consumers, context, baseline, findings);
     const report = buildReport(context, findings);
     const json = `${JSON.stringify(report, null, 2)}\n`;

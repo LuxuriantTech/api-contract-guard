@@ -2,8 +2,9 @@
 
 | Claim | Local evidence | Observed result | Limit |
 | --- | --- | --- | --- |
-| Runtime gate | `npm run ci` | Exit 0; 16 files, 102 tests | Local execution only. |
-| Coverage | `npm run test:coverage` | Statements 94.40%, branches 87.62%, functions 100%, lines 98.73% | V8 local coverage. |
+| Runtime gate | `npm run ci` | Exit 0; 16 files, 102 tests after W72 remediation; synthetic demo, local smoke, and secret scan included | Local execution only. |
+| Coverage | `npm run test:coverage` | Statements 94.06% (555/590), branches 88.46% (483/546), functions 100% (79/79), lines 98.65% (366/371) | V8 local coverage. |
+| W71 parameter regression | `npx vitest run tests/rules.test.ts` | RED: 3 expected failures; GREEN: 8 tests passed | Covers effective parameters behind Path Item `$ref`, schema comparison, and one path-level inline finding. |
 | Demo | `npm run demo` | One synthetic `OPERATION_REMOVED | GET | /orders`; local temporary JSON/HTML paths | Not production traffic or client evidence. |
 | Security dependencies | `npm run ci:security`, `npm audit` | Exit 0; 0 vulnerabilities reported | Point-in-time local dependency state. |
 | Secret scan | local gitleaks directory scan | Exit 0 on 618.71 KB | Scan result is not a publication or external assessment. |
