@@ -7,6 +7,7 @@
 | Demo | `npm run demo` | One synthetic `OPERATION_REMOVED | GET | /orders`; local temporary JSON/HTML paths | Not production traffic or client evidence. |
 | Security dependencies | `npm run ci:security`, `npm audit` | Exit 0; 0 vulnerabilities reported | Point-in-time local dependency state. |
 | Secret scan | local gitleaks directory scan | Exit 0 on 618.71 KB | Scan result is not a publication or external assessment. |
+| Git history secret scan | `gitleaks git --redact .` | Exit 0 on initial commit `b18a6cd305d7576b1a7b70767b23d01c76d6590c` (`feat: build local API contract guard`); 1 commit, about 227159 bytes, no leaks | The worktree was clean immediately after the historical scan. No remote, push, deployment, or publication occurred. |
 | Package boundary | `npm pack --dry-run --json` | Exit 0; 19 files; binary present; no `src`, `tests`, or `dist/internal` | Package was not published. |
 | Independent review | W59 product CONFIRMED; W61 focused security CONFIRMED | Runtime UX and W60 diff reviewed independently | Reviews are local mission evidence. |
 
