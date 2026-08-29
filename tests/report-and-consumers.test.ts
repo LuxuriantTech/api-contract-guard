@@ -46,6 +46,20 @@ describe("AC1, AC9-AC11 reports, warnings, consumers and demo", () => {
     const consumers = "version: 1\nconsumers:\n  - id: synthetic-shop-web\n    operations: [{method: get, path: /orders}]\n";
     const input = await createCase("consumer", baseline, candidate, { "consumers.yaml": consumers });
     await expect(compare({ ...input, consumers: "consumers.yaml" })).resolves.toMatchObject({ exitCode: 2, report: { findings: [{ ruleId: "OPERATION_REMOVED", consumerIds: ["synthetic-shop-web"] }] } });
+    const duplicateConsumers = "version: 1\nconsumers:\n  - id: synthetic-shop-web\n    operations: [{method: get, path: /orders}, {method: get, path: /orders}]\n";
+    const duplicateInput = await createCase("consumer-duplicate", baseline, candidate, { "consumers.yaml": duplicateConsumers });
+    await expect(compare({ ...duplicateInput, consumers: "consumers.yaml" })).resolves.toMatchObject({ exitCode: 2, report: { findings: [{ ruleId: "OPERATION_REMOVED", consumerIds: ["synthetic-shop-web"] }] } });
+    const referenced = "openapi: 3.1.0\npaths:\n  /orders: {$ref: './same-path.yaml'}\n";
+    const sameInput = await createCase("consumer-ref-same", referenced, referenced, {
+      "same-path.yaml": "get: {responses: {'200': {description: ok}}}\n",
+      "consumers.yaml": consumers,
+    });
+    await expect(compare({ ...sameInput, consumers: "consumers.yaml" })).resolves.toMatchObject({ exitCode: 0, report: { findings: [] } });
+    const removedInput = await createCase("consumer-ref-removed", referenced, "openapi: 3.1.0\npaths: {}\n", {
+      "same-path.yaml": "get: {responses: {'200': {description: ok}}}\n",
+      "consumers.yaml": consumers,
+    });
+    await expect(compare({ ...removedInput, consumers: "consumers.yaml" })).resolves.toMatchObject({ exitCode: 2, report: { findings: [{ ruleId: "OPERATION_REMOVED", method: "get", path: "/orders", consumerIds: ["synthetic-shop-web"] }] } });
   });
   it("rejects a synthetic consumer operation missing from baseline", async () => {
     const consumers = "version: 1\nconsumers:\n  - id: synthetic-nope\n    operations: [{method: get, path: /missing}]\n";

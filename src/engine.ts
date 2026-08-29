@@ -23,6 +23,10 @@ function addFinding(findings: Finding[], ruleId: RuleId, method: HttpMethod, pat
   findings.push({ ruleId, method, path, pointer, message, consumerIds: [] });
 }
 
+function operationKey(method: HttpMethod, path: string): string {
+  return `${method}:${path}`;
+}
+
 async function schema(value: JsonValue | undefined, context: RunContext, document: LoadedDocument, location: string, depth = 0): Promise<ResolvedNode | undefined> {
   if (value === undefined) return undefined;
   if (depth > 32) throw new Fail("INPUT_LIMIT");
@@ -246,20 +250,22 @@ function buildReport(context: RunContext, findings: Finding[]): Report {
   return { verdict: unique.length ? "supported-breaking-change-detected" : "no-supported-breaking-change-detected", disclaimer: unique.length ? findingDisclaimer : disclaimer, inputSha256: Object.fromEntries(Object.entries(context.hashes).sort(([left], [right]) => sort(left, right))), supportedRules: rules, findings: unique, warnings: context.warnings, summary };
 }
 
-async function annotateConsumers(consumersPath: string | undefined, context: RunContext, baseline: JsonRecord, findings: Finding[]): Promise<void> {
+async function annotateConsumers(consumersPath: string | undefined, context: RunContext, baselineOperations: ReadonlyMap<string, LoadedDocument>, findings: Finding[]): Promise<void> {
   if (!consumersPath) return;
   const manifest = jsonRecord((await loadDocument(consumersPath, context)).value);
   if (!manifest || manifest.version !== 1 || !Array.isArray(manifest.consumers)) throw new Fail("CONSUMER_INVALID");
-  const paths = jsonRecord(baseline.paths) ?? Object.create(null) as JsonRecord;
   const consumerIds = new Set<string>();
   for (const value of manifest.consumers) {
     const consumer = jsonRecord(value);
     if (!consumer || typeof consumer.id !== "string" || consumer.id.trim().length === 0 || consumerIds.has(consumer.id) || !Array.isArray(consumer.operations)) throw new Fail("CONSUMER_INVALID");
     consumerIds.add(consumer.id);
+    const operationKeys = new Set<string>();
     for (const value of consumer.operations) {
       const operation = jsonRecord(value);
-      const pathItem = operation && typeof operation.path === "string" ? jsonRecord(paths[operation.path]) : undefined;
-      if (!operation || typeof operation.method !== "string" || !methods.includes(operation.method as HttpMethod) || typeof operation.path !== "string" || !pathItem || !jsonRecord(pathItem[operation.method])) throw new Fail("CONSUMER_INVALID");
+      if (!operation || typeof operation.method !== "string" || !methods.includes(operation.method as HttpMethod) || typeof operation.path !== "string" || !baselineOperations.has(operationKey(operation.method as HttpMethod, operation.path))) throw new Fail("CONSUMER_INVALID");
+      const key = operationKey(operation.method as HttpMethod, operation.path);
+      if (operationKeys.has(key)) continue;
+      operationKeys.add(key);
       for (const finding of findings) if (finding.method === operation.method && finding.path === operation.path) finding.consumerIds.push(consumer.id);
     }
   }
@@ -282,6 +288,7 @@ export async function compareWithFileSystem(options: CompareOptions, fs: FileSys
     const oldPaths = jsonRecord(baseline.paths) ?? Object.create(null) as JsonRecord;
     const newPaths = jsonRecord(candidate.paths) ?? Object.create(null) as JsonRecord;
     if (jsonRecord(baseline.info)) addWarning(context, "IGNORED_OPENAPI_SURFACE", "/info", "ignored OpenAPI surface");
+    const baselineOperations = new Map<string, LoadedDocument>();
     for (const path of Object.keys(oldPaths)) {
       const oldPath = await resolveNode(oldPaths[path]!, context, baselineDocument);
       const candidateValue = newPaths[path];
@@ -294,6 +301,7 @@ export async function compareWithFileSystem(options: CompareOptions, fs: FileSys
         const newOperation = newPathItem && jsonRecord(newPathItem[method]);
         const base = `/paths/${ptr(path)}/${method}`;
         await validateOperationSurface(oldOperation, oldPathItem, context, oldPath.document, base);
+        baselineOperations.set(operationKey(method, path), oldPath.document);
         if (newOperation) await validateOperationSurface(newOperation, newPathItem!, context, newPath?.document ?? candidateDocument, base);
         if (!newOperation) { addFinding(findings, "OPERATION_REMOVED", method, path, base, "operation removed"); continue; }
         const pathItemBase = `/paths/${ptr(path)}`;
@@ -324,7 +332,7 @@ export async function compareWithFileSystem(options: CompareOptions, fs: FileSys
         }
       }
     }
-    await annotateConsumers(options.consumers, context, baseline, findings);
+    await annotateConsumers(options.consumers, context, baselineOperations, findings);
     const report = buildReport(context, findings);
     const json = `${JSON.stringify(report, null, 2)}\n`;
     const html = renderHtml(report);
