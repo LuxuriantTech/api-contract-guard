@@ -1,0 +1,16 @@
+.venv/
+node_modules/
+dist/
+build/
+coverage/
+.coverage
+coverage.xml
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.py[cod]
+.env*
+!.env.example
+.vercel/
+*.log

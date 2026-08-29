@@ -1,0 +1,29 @@
+{
+  "name": "api-contract-guard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "files": ["dist/**", "!dist/internal/**", "README.md", "docs/**"],
+  "bin": { "api-contract-guard": "dist/main.js" },
+  "engines": { "node": "24.15.0" },
+  "packageManager": "npm@11.18.0",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "predemo": "npm run build",
+    "demo": "node dist/demo.js",
+    "smoke:cli": "node scripts/smoke-cli.mjs",
+    "scan:secrets": "node scripts/scan-secrets.mjs",
+    "ci:security": "npm audit --omit=dev && npm run scan:secrets",
+    "ci": "npm run typecheck && npm run build && npm run test:coverage && npm run demo && npm run smoke:cli && npm run scan:secrets"
+  },
+  "dependencies": { "yaml": "2.9.0" },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "@vitest/coverage-v8": "4.1.11",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
+  }
+}
