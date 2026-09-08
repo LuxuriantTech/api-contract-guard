@@ -1,5 +1,7 @@
 # API Contract Guard
 
+[Try the interactive synthetic demo](https://project-atlas-six-delta.vercel.app/projects/api-contract-guard/) · [Demo source and local preview](docs/interactive-demo/README.md) · [Contact me](mailto:mehajardian@gmail.com)
+
 [Read the synthetic example and its limits](docs/portfolio-walkthrough.md).
 
 API Contract Guard is a local TypeScript CLI that compares a defined subset of two OpenAPI documents. It reports supported breaking changes as JSON and static HTML. It is a portfolio project, not a hosted service or a general OpenAPI compatibility verdict.

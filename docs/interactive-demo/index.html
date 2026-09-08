@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>API Contract Guard</title>
+<link rel="stylesheet" href="site.css">
+<link rel="icon" href="data:,">
+</head>
+<body class="guard" data-demo="contract">
+<a class="skip" href="#main">Skip to change report</a>
+<header class="site-head">
+<a href="https://project-atlas-six-delta.vercel.app/projects/">← five local studies</a>
+<nav aria-label="Project navigation">
+<a href="https://project-atlas-six-delta.vercel.app/projects/toolcall-replay/">ToolCall</a>
+<a href="https://project-atlas-six-delta.vercel.app/projects/entity-resolution-workbench/">Entity</a>
+<a href="https://project-atlas-six-delta.vercel.app/projects/postgres-migration-rehearsal/">PMR</a>
+<a aria-current="page" href="./index.html">API Contract Guard</a>
+<a href="https://project-atlas-six-delta.vercel.app/projects/evidencedesk/">EvidenceDesk</a>
+</nav>
+</header>
+<main class="wrap" id="main" tabindex="-1">
+<p class="eyebrow">Local TypeScript OpenAPI subset comparator</p>
+<p class="quiet">Static walkthrough • synthetic examples • application runs locally.</p>
+<h1>Make a supported breaking change plain.</h1>
+<p class="lede">API Contract Guard compares a defined subset of two OpenAPI documents and produces JSON plus static HTML. It is a local CLI, not a hosted compatibility service or a general OpenAPI verdict.</p>
+<p><a href="https://github.com/LuxuriantTech/api-contract-guard/tree/main">Source and local setup on GitHub</a></p>
+<div class="actions" aria-label="API Contract Guard actions">
+<a class="action primary" href="#interactive-demo">Try the demo</a>
+<a class="action" href="https://github.com/LuxuriantTech/api-contract-guard/tree/main">GitHub</a>
+<a class="action" href="mailto:mehajardian@gmail.com?subject=API%20Contract%20Guard">Contact me</a>
+</div>
+<section class="demo" id="interactive-demo" aria-labelledby="contract-demo-title">
+<div class="demo-head"><div><p class="eyebrow">Interactive prepared illustration</p><h2 id="contract-demo-title">Compare a supported contract change</h2></div><button class="action" type="button" id="contract-reset">Reset demo</button></div>
+<p>These compact OpenAPI-like snippets are fictional. The browser swaps prepared reports; it does not execute the TypeScript comparator.</p>
+<div class="demo-controls"><label>Contract pair<select id="contract-select" data-initial="removed"><option value="removed">Removed GET /orders</option><option value="parameter">Required region parameter added</option><option value="response">Required response email removed</option></select></label></div>
+<p id="contract-live" class="sr-status" aria-live="polite"></p><div id="contract-output" class="demo-output" aria-live="polite"></div>
+</section>
+<section class="panel finding">
+<p class="eyebrow">Prepared synthetic illustration</p>
+<h2>
+<code>OPERATION_REMOVED</code>
+</h2>
+<p>
+<strong>GET /orders</strong> is removed in the local synthetic comparison. The label <code>synthetic-shop-web</code> is a synthetic consumer annotation, not an observed client or usage record.</p>
+
+</section>
+<hr class="rule">
+<div class="grid two">
+<section>
+<h2>Three distinct outcomes</h2>
+<ul>
+<li>
+<strong>Exit 0:</strong> no supported breaking change found.</li>
+<li>
+<strong>Exit 2:</strong> the local CLI uses this code for a supported breaking category. This browser illustration does not execute the CLI.</li>
+<li>
+<strong>Exit 3:</strong> invalid input or unsupported capability. No report artefact is produced.</li>
+</ul>
+</section>
+<section class="panel">
+<h2>Bounded rules</h2>
+<p>The comparator supports exactly five categories: operation removal, required parameter added, required request property added, required response property removed, and enum value removed. Unsupported document shapes fail closed.</p>
+</section>
+</div>
+<details>
+<summary>Local quick start</summary>
+<pre class="command">
+<code>npm ci
+npm run demo</code>
+</pre>
+<p>Use Node 24.15.0 and npm 11.18.0 from the prepared checkout. The demo compares local synthetic fixtures and makes no network, traffic, customer-data, or hosted-service claim.</p>
+</details>
+<section class="notice">
+<strong>Limit</strong>A change outside the supported document subset is deliberately an input/unsupported outcome, not evidence that an API is compatible. The result applies only to the compared local documents.</section>
+</main>
+<footer class="site-foot">
+<p>I define the needs, organize AI-assisted work, review the code with AI support, test the journeys, and improve the result. AI contributes strongly to implementation; I am still developing my ability to write code independently. <a href="mailto:mehajardian@gmail.com?subject=API%20Contract%20Guard">mehajardian@gmail.com</a></p>
+</footer>
+<script src="demo.js"></script>
+</body>
+</html>
