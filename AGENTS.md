@@ -1,3 +1,3 @@
 # Agent entrypoint
 
-Read `/home/ardian/dev/career-project-lab/AGENTS.md`, `/home/ardian/dev/career-project-lab/START_HERE.md` and `/home/ardian/dev/career-project-lab/CODEX.md`.
+Preserve existing changes. Read README.md and package.json before editing. Keep comparisons local and synthetic. Run npm run ci and npm run ci:security for implementation changes. Publish only with explicit owner authorization.
