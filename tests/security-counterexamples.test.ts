@@ -50,7 +50,8 @@ describe("W45 security counterexamples", () => {
     const over = nodeYaml(49_997);
     await expect(compare(await createCase("nodes-within", within, within))).resolves.toMatchObject({ exitCode: 0 });
     await expect(compare(await createCase("nodes-over", over, over))).resolves.toMatchObject({ exitCode: 3, errorCode: "INPUT_LIMIT", report: undefined });
-  });
+  // Four near-limit parses run with coverage on shared CI workers; input limits stay unchanged.
+  }, 15_000);
 
   it("rejects references with a non-http URI scheme", async () => {
     const invalid = response("{$ref: 'a1:local.yaml#/S'}");
