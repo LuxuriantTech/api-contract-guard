@@ -1,10 +1,10 @@
 # API Contract Guard
 
-[Try the interactive synthetic demo](https://project-atlas-six-delta.vercel.app/projects/api-contract-guard/) · [Demo source and local preview](docs/interactive-demo/README.md) · [Contact me](mailto:mehajardian@gmail.com)
+[Try the current in-browser comparison](https://ardian-mehaj-portfolio.vercel.app/projects/api-contract-guard/) · [Run the local CLI comparison](#quick-start) · [Older prepared walkthrough source](docs/interactive-demo/README.md) · [Contact me](mailto:mehajardian@gmail.com)
 
 [Read the synthetic example and its limits](docs/portfolio-walkthrough.md).
 
-API Contract Guard is a local TypeScript CLI that compares a defined subset of two OpenAPI documents. It reports supported breaking changes as JSON and static HTML. It is a portfolio project, not a hosted service or a general OpenAPI compatibility verdict.
+API Contract Guard is a local TypeScript CLI that compares a defined subset of two OpenAPI documents. It reports supported breaking changes as JSON and static HTML. The separate browser demonstration is not a hosted API service or a general OpenAPI compatibility verdict.
 
 ## Quick start
 
@@ -16,6 +16,7 @@ npm run demo
 ```
 
 The demo builds the CLI and compares local synthetic fixtures. It prints one synthetic `OPERATION_REMOVED` finding for `GET /orders` and the paths of temporary JSON and HTML artifacts. It does not use a client system, production traffic, or external network access.
+The local CLI performs the comparison. The current hosted page performs a separate comparison in the browser on editable synthetic documents. The older `docs/interactive-demo/` frontend is a prepared walkthrough and does not run either comparison engine.
 
 ## CLI
 
