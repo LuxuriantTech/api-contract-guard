@@ -10,6 +10,8 @@ import { createCase } from "./helpers.js";
 const execute = promisify(execFile);
 const projectRoot = resolve(import.meta.dirname, "..");
 const noFindingsDisclaimer = "No supported breaking changes detected. This is not a general OpenAPI compatibility verdict. Review warnings and supportedRules.";
+const npmCli = process.env.npm_execpath;
+if (!npmCli) throw new Error("npm_execpath is unavailable; run this test suite through npm.");
 
 describe("W57 product consistency", () => {
   it("keeps the exact no-findings disclaimer and uses a non-contradictory finding scope", async () => {
@@ -36,7 +38,7 @@ describe("W57 product consistency", () => {
     await expect(lstat(join(temporary, "dist"))).rejects.toThrow();
     const manifest = JSON.parse(await readFile(join(temporary, "package.json"), "utf8")) as { scripts?: Record<string, string> };
     expect(manifest.scripts?.predemo).toBe("npm run build");
-    const { stdout } = await execute("npm", ["run", "demo"], { cwd: temporary });
+    const { stdout } = await execute(process.execPath, [npmCli, "run", "demo"], { cwd: temporary });
     expect(stdout).toContain("Synthetic scenario only");
     await expect(lstat(join(temporary, "dist", "demo.js"))).resolves.toBeDefined();
   });
