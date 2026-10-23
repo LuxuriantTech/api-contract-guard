@@ -1,3 +1,6 @@
+import { execFile } from "node:child_process";
+import { resolve } from "node:path";
+import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
 import { compare } from "../src/index.js";
 import { createCase } from "./helpers.js";
@@ -11,6 +14,8 @@ paths:
 `;
 const execute = promisify(execFile);
 const projectRoot = resolve(import.meta.dirname, "..");
+const npmCli = process.env.npm_execpath;
+if (!npmCli) throw new Error("npm_execpath is unavailable; run this test suite through npm.");
 
 async function expectUnsupported(name: string, baseline: string, candidate = baseline): Promise<void> {
   await expect(compare(await createCase(name, baseline, candidate))).resolves.toEqual({ exitCode: 3, errorCode: "CAPABILITY_UNSUPPORTED", report: undefined });
@@ -45,13 +50,10 @@ paths:
   });
 
   it("keeps internal implementation, tests and TypeScript sources out of the npm pack", async () => {
-    const { stdout } = await execute("npm", ["pack", "--dry-run", "--json"], { cwd: projectRoot });
+    const { stdout } = await execute(process.execPath, [npmCli, "pack", "--dry-run", "--json"], { cwd: projectRoot });
     const packed = JSON.parse(stdout) as Array<{ files: Array<{ path: string }> }>;
     const names = packed[0]?.files.map((file) => file.path) ?? [];
     expect(names).toContain("dist/main.js");
     expect(names.some((name) => name.startsWith("dist/internal/") || name.startsWith("tests/") || name.startsWith("src/"))).toBe(false);
   });
 });
-import { execFile } from "node:child_process";
-import { resolve } from "node:path";
-import { promisify } from "node:util";
