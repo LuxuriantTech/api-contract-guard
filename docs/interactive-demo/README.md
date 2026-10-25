@@ -10,4 +10,4 @@ Then open http://127.0.0.1:8080/. No server engine, account, payment, API call o
 
 This file describes the older prepared frontend. The current hosted page below runs a separate in-browser comparison on editable synthetic documents.
 
-[Current hosted comparison](https://ardian-mehaj-portfolio.vercel.app/projects/api-contract-guard/) · [Contact](mailto:mehajardian@gmail.com)
+[Current hosted comparison](https://ardianmehaj.dev/projects/api-contract-guard/) · [Contact](mailto:mehajardian@gmail.com)
