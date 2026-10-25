@@ -1,6 +1,6 @@
 # API Contract Guard
 
-[Try the current in-browser comparison](https://ardian-mehaj-portfolio.vercel.app/projects/api-contract-guard/) · [Run the local CLI comparison](#quick-start) · [Older prepared walkthrough source](docs/interactive-demo/README.md) · [Contact me](mailto:mehajardian@gmail.com)
+[Try the current in-browser comparison](https://ardianmehaj.dev/projects/api-contract-guard/) · [Run the local CLI comparison](#quick-start) · [Older prepared walkthrough source](docs/interactive-demo/README.md) · [Contact me](mailto:mehajardian@gmail.com)
 
 [Read the synthetic example and its limits](docs/portfolio-walkthrough.md).
 
